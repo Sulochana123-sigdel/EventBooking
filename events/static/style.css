@@ -1,0 +1,22 @@
+body {
+    background-color: #f7f7f7;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.card {
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+a {
+    text-decoration: none;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.3rem;
+}
+
+.btn {
+    border-radius: 0.5rem;
+}

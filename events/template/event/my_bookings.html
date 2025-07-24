@@ -1,0 +1,19 @@
+{% extends 'event/base.html' %}
+{% block title %}My Bookings{% endblock %}
+
+{% block content %}
+<h3>📋 My Booked Events</h3>
+<ul class="list-group mt-3">
+  {% for booking in bookings %}
+    <li class="list-group-item d-flex justify-content-between">
+      <div>
+        <strong>{{ booking.event.title }}</strong><br>
+        {{ booking.event.date }} at {{ booking.event.time }} ({{ booking.event.location }})
+      </div>
+      <span class="text-muted">Booked on {{ booking.booked_on }}</span>
+    </li>
+  {% empty %}
+    <p class="text-muted">You haven't booked any events yet.</p>
+  {% endfor %}
+</ul>
+{% endblock %}
