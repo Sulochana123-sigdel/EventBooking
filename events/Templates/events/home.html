@@ -1,0 +1,207 @@
+{% extends 'events/base.html' %}
+{% load static %}
+
+DEBUG: {{ category_choices }}
+{% block title %}Upcoming Events{% endblock %}
+
+{% block content %}
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1 class="display-5 fw-bold">Upcoming Events</h1>
+    </div>
+    <div class="col-md-6">
+        <form method="get" action="{% url 'event_list' %}">
+            <div class="input-group">
+                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                <input type="text" name="q" id="eventSearch" class="form-control" placeholder="Search events..." value="{{ request.GET.q }}">
+                <button class="btn btn-primary" type="submit">Search</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if featured_events %}
+<div class="row mb-5">
+    <div class="col-12">
+        <h2 class="h4 mb-3">Featured Events</h2>
+        <div class="owl-carousel owl-theme">
+            {% for event in featured_events %}
+            <div class="item">
+                <div class="card h-100">
+                    {% if event.image %}
+                    <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.title }}" style="height: 180px; object-fit: cover;">
+                    {% else %}
+                    <img src="{% static 'events/images/default-event.jpg' %}" class="card-img-top" alt="Default event image" style="height: 180px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ event.title }}</h5>
+                        <p class="card-text text-muted small">
+                            <i class="bi bi-calendar"></i> {{ event.date|date:"M d, Y" }}<br>
+                            <i class="bi bi-geo-alt"></i> {{ event.location }}
+                        </p>
+                        <a href="{% url 'event_detail' event.id %}" class="btn btn-sm btn-outline-primary">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Filters</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" action="{% url 'event_list' %}">
+                    <h6 class="card-subtitle mb-2 text-muted">Categories</h6>
+                     <a href="{% url 'event_list' %}?category={{ category.name }}">
+        {{ category.name }}
+      </a>
+                    <div class="mb-3">
+                        <select name="category" class="form-select" onchange="this.form.submit()">
+                            <option value="" {% if not request.GET.category %}selected{% endif %}>All Categories</option>
+                            {% for value, label in category_choices %}
+                                <option value="{{ value }}" {% if request.GET.category == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+
+                        </select>
+                    </div>
+                    <hr>
+                    <h6 class="card-subtitle mb-2 text-muted">Date Range</h6>
+                    <div class="mb-3">
+                        <label for="startDate" class="form-label small">From</label>
+                        <input type="date" id="startDate" name="from" class="form-control form-control-sm" value="{{ request.GET.from }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="endDate" class="form-label small">To</label>
+                        <input type="date" id="endDate" name="to" class="form-control form-control-sm" value="{{ request.GET.to }}">
+                    </div>
+                    <input type="hidden" name="q" value="{{ request.GET.q }}">
+                    <button type="submit" class="btn btn-sm btn-primary w-100">Apply Filters</button>
+                    {% if request.GET %}
+                    <a href="{% url 'event_list' %}" class="btn btn-sm btn-outline-secondary w-100 mt-2">Reset Filters</a>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="row" style="min-height: 350px;">
+            {% for event in events %}
+            <div class="col-md-6 col-lg-4 mb-4 event-card">
+                <div class="card h-100">
+                    {% if event.image %}
+                    <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.title }}" style="height: 160px; object-fit: cover;">
+                    {% else %}
+                    <img src="{% static 'events/images/default-event.jpg' %}" class="card-img-top" alt="Default event image" style="height: 160px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-primary">{{ event.category }}</span>
+                            <span class="text-success fw-bold">
+                                {% if event.price > 0 %}
+                                    ${{ event.price }}
+                                {% else %}
+                                    Free
+                                {% endif %}
+                            </span>
+                        </div>
+                        <h5 class="card-title">{{ event.title }}</h5>
+                        <p class="card-text text-muted small">
+                            <i class="bi bi-calendar"></i> {{ event.date|date:"M d, Y" }}<br>
+                            <i class="bi bi-clock"></i> {{ event.time|time:"g:i A" }}<br>
+                            <i class="bi bi-geo-alt"></i> {{ event.location }}
+                        </p>
+                        <p class="card-text">{{ event.description|truncatechars:120 }}</p>
+                    </div>
+                    <div class="card-footer bg-white">
+                        <a href="{% url 'event_detail' event.id %}" class="btn btn-primary w-100">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 d-flex align-items-center justify-content-center" style="min-height: 350px;">
+                <div class="card shadow-sm" style="max-width: 450px; width: 100%;">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-calendar-x text-muted" style="font-size: 3rem;"></i>
+                        <h4 class="mt-3">
+                            <span style="color: #2563eb; font-weight: bold;">No</span> Events Found
+                        </h4>
+                        <p class="text-muted">There are currently no events matching your criteria.</p>
+                        <a href="{% url 'event_list' %}" class="btn btn-primary">Reset Filters</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if is_paginated %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        {{ num }}
+                    </a>
+                </li>
+                {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Owl Carousel -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
+
+<script>
+    $(document).ready(function(){
+        $(".owl-carousel").owlCarousel({
+            loop: true,
+            margin: 10,
+            nav: true,
+            dots: false,
+            responsive: {
+                0: { items: 1 },
+                600: { items: 2 },
+                1000: { items: 3 }
+            }
+        });
+
+        // Set date input values if they exist
+        $('#startDate').val("{{ start_date|default_if_none:''|escapejs }}");
+        $('#endDate').val("{{ end_date|default_if_none:''|escapejs }}");
+
+    });
+</script>
+{% endblock %}

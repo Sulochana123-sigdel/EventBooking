@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
 ]
 
+
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -54,13 +56,18 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'event_booking.urls'
 
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
+        'DIRS': [BASE_DIR / 'templates'],  # Global templates folder (optional)
+        'APP_DIRS': True,  # Looks for templates in each app's 'templates' folder
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',

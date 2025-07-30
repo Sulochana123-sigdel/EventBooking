@@ -1,0 +1,189 @@
+{% extends 'events/base.html' %}
+{% load static %}
+
+{% block title %}My Events{% endblock %}
+
+{% block extra_css %}
+<style>
+    .event-card {
+        transition: all 0.3s;
+        margin-bottom: 1.5rem;
+    }
+    .event-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1);
+    }
+    .event-status {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .status-published {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .status-draft {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .status-private {
+        background-color: #e2e3e5;
+        color: #383d41;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 5rem 0;
+    }
+    .empty-state i {
+        font-size: 4rem;
+        color: #dee2e6;
+        margin-bottom: 1rem;
+    }
+    .stats-card {
+        border-left: 4px solid var(--primary-color);
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .stats-number {
+        font-size: 2rem;
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">My Events</h1>
+    <a href="{% url 'create_event' %}" class="btn btn-primary">
+        <i class="bi bi-plus"></i> Create New Event
+    </a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card stats-card">
+            <h6 class="text-muted">Total Events</h6>
+            <div class="stats-number">{{ total_events }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stats-card">
+            <h6 class="text-muted">Upcoming Events</h6>
+            <div class="stats-number">{{ upcoming_events }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stats-card">
+            <h6 class="text-muted">Total Attendees</h6>
+            <div class="stats-number">{{ total_attendees }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <ul class="nav nav-tabs card-header-tabs">
+            <li class="nav-item">
+                <a class="nav-link {% if not request.GET.status %}active{% endif %}" href="{% url 'my_events' %}">All Events</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.GET.status == 'published' %}active{% endif %}" href="?status=published">Published</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.GET.status == 'draft' %}active{% endif %}" href="?status=draft">Drafts</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.GET.status == 'private' %}active{% endif %}" href="?status=private">Private</a>
+            </li>
+        </ul>
+    </div>
+    <div class="card-body">
+        {% if events %}
+        <div class="row">
+            {% for event in events %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card event-card h-100">
+                    {% if event.image %}
+                    <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.title }}" style="height: 180px; object-fit: cover;">
+                    {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 180px;">
+                        <i class="bi bi-calendar-event text-muted" style="font-size: 3rem;"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <span class="event-status status-{{ event.status }}">{{ event.status|title }}</span>
+                    
+                    <div class="card-body">
+                        <h5 class="card-title">{{ event.title }}</h5>
+                        <p class="card-text text-muted small">
+                            <i class="bi bi-calendar"></i> {{ event.date|date:"M j, Y" }}<br>
+                            <i class="bi bi-geo-alt"></i> {{ event.location }}
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-primary">{{ event.category }}</span>
+                            <span class="text-success fw-bold">${{ event.price }}</span>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white">
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'event_detail' event.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                            <a href="{% url 'edit_event' event.id %}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                            <a href="{% url 'event_dashboard' event.id %}" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-graph-up"></i> Stats
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-calendar-x"></i>
+            <h3>No Events Found</h3>
+            <p class="text-muted">You haven't created any events yet.</p>
+            <a href="{% url 'create_event' %}" class="btn btn-primary mt-3">Create Your First Event</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if is_paginated %}
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% endif %}
+        
+        {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <li class="page-item"><a class="page-link" href="?page={{ num }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">{{ num }}</a></li>
+        {% endif %}
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,214 @@
+{% extends 'events/base.html' %}
+{% load static %}
+
+{% block title %}{{ event.title }} | Event Details{% endblock %}
+
+{% block extra_css %}
+<style>
+/* 🔹 Your existing CSS here */
+
+/* Share Buttons Style */
+.btn-share {
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    border-width: 2px;
+    border-radius: 10px;
+    background: #fff;
+    transition: box-shadow 0.2s, border-color 0.2s;
+    margin-right: 6px;
+    margin-bottom: 6px;
+}
+.btn-facebook   { border-color: #1877f2; color: #1877f2; }
+.btn-facebook:hover { background: #1877f2; color: #fff; }
+.btn-twitter    { border-color: #1da1f2; color: #1da1f2; }
+.btn-twitter:hover { background: #1da1f2; color: #fff; }
+.btn-linkedin   { border-color: #0a66c2; color: #0a66c2; }
+.btn-linkedin:hover { background: #0a66c2; color: #fff; }
+.btn-email      { border-color: #ea4335; color: #ea4335; }
+.btn-email:hover { background: #ea4335; color: #fff; }
+.btn-link       { border-color: #888; color: #888; }
+.btn-link:hover { background: #888; color: #fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <!-- Event Header -->
+        <div class="card mb-4">
+            {% if event.image %}
+            <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.title }}" style="max-height: 400px; object-fit: cover;">
+            {% endif %}
+            <div class="card-body">
+                <!-- ✅ Full Event Details -->
+                <h2 class="card-title">{{ event.title }}</h2>
+                <div class="mb-3 text-muted">
+                    <i class="bi bi-calendar-event"></i> {{ event.date|date:"F j, Y" }} at {{ event.time|time:"g:i A" }}<br>
+                    <i class="bi bi-geo-alt"></i> {{ event.location }}<br>
+                    <i class="bi bi-tags"></i> Category: {{ event.category.name }}<br>
+                    <i class="bi bi-person-gear"></i> Total Seats: {{ event.seats }}<br>
+                    <i class="bi bi-currency-dollar"></i> Price: NPR{{ event.price }}
+                </div>
+
+                <h5 class="mt-4">Event Description</h5>
+                <p class="card-text">{{ event.description|linebreaks }}</p>
+            </div>
+        </div>
+
+        <!-- Reviews Section -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Reviews</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">No reviews yet.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="sidebar-content">
+
+            <!-- Booking Card -->
+            <div class="card booking-card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Book Your Ticket</h5>
+                </div>
+                <div class="card-body">
+                    {% if event.is_sold_out %}
+                    <div class="alert alert-danger">This event is sold out!</div>
+                    {% elif event.date < today %}
+                    <div class="alert alert-warning">This event has already occurred.</div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <span id="availableSeatsText" 
+                              data-available="{{ event.seats }}" 
+                              data-total="{{ event.seats }}">
+                            {{ event.seats }} seats available
+                        </span>
+                    </div>
+
+                    {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'book_event' event.id %}" id="bookingForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Number of Tickets</label>
+                            <div class="ticket-quantity">
+                                <button type="button" class="btn btn-outline-secondary" onclick="adjustTicketQuantity(-1)">-</button>
+                                <input type="number" class="form-control text-center" id="ticketQuantity" name="quantity" min="1" max="{{ event.seats }}" value="1" required onchange="validateTicketQuantity()">
+                                <button type="button" class="btn btn-outline-secondary" onclick="adjustTicketQuantity(1)">+</button>
+                            </div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-ticket-perforated"></i> Book Now
+                            </button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        You need to <a href="{% url 'login' %}?next={% url 'event_detail' event.id %}" class="alert-link">login</a> to book tickets.
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-white">
+                    <small class="text-muted"><i class="bi bi-shield-lock"></i> Secure checkout</small>
+                </div>
+            </div>
+
+            <!-- Share Buttons (Below Booking Card) -->
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Share Event</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex gap-2 flex-wrap justify-content-start">
+                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" 
+                           class="btn btn-share btn-facebook" target="_blank" title="Share on Facebook">
+                            <i class="bi bi-facebook"></i>
+                        </a>
+                        <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}" 
+                           class="btn btn-share btn-twitter" target="_blank" title="Share on Twitter">
+                            <i class="bi bi-twitter"></i>
+                        </a>
+                        <a href="https://www.linkedin.com/shareArticle?url={{ request.build_absolute_uri }}" 
+                           class="btn btn-share btn-linkedin" target="_blank" title="Share on LinkedIn">
+                            <i class="bi bi-linkedin"></i>
+                        </a>
+                        <a href="mailto:?subject={{ event.title }}&body={{ request.build_absolute_uri }}" 
+                           class="btn btn-share btn-email" title="Share via Email">
+                            <i class="bi bi-envelope"></i>
+                        </a>
+                        <a href="#" class="btn btn-share btn-link" onclick="copyToClipboard('{{ request.build_absolute_uri }}')" title="Copy Link">
+                            <i class="bi bi-link-45deg"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Similar Events -->
+            {% if similar_events %}
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Similar Events</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for similar_event in similar_events %}
+                        <a href="{% url 'event_detail' similar_event.id %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex align-items-center">
+                                {% if similar_event.image %}
+                                <img src="{{ similar_event.image.url }}" class="rounded me-3" width="60" height="60" style="object-fit: cover;">
+                                {% endif %}
+                                <div>
+                                    <h6 class="mb-1">{{ similar_event.title }}</h6>
+                                    <small class="text-muted">
+                                        {{ similar_event.date|date:"M j" }} • {{ similar_event.location }}
+                                    </small>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function adjustTicketQuantity(change) {
+        const input = document.getElementById('ticketQuantity');
+        const max = parseInt(input.max);
+        let val = parseInt(input.value) + change;
+        if (val < 1) val = 1;
+        if (val > max) val = max;
+        input.value = val;
+    }
+
+    function validateTicketQuantity() {
+        const input = document.getElementById('ticketQuantity');
+        const max = parseInt(input.max);
+        let val = parseInt(input.value);
+        if (val > max) input.value = max;
+        if (val < 1) input.value = 1;
+    }
+
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Link copied to clipboard!');
+        }).catch(() => {
+            alert('Failed to copy!');
+        });
+    }
+</script>
+{% endblock %}
